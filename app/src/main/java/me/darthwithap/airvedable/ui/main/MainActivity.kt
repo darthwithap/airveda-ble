@@ -33,7 +33,7 @@ class MainActivity : AppCompatActivity() {
     private var scanResults = arrayListOf<ScanResult>()
 
     private val isLocationPermissionGranted
-        get() = hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION) // should be in the viewmodel
+        get() = hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION) // should be in the viewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,10 +43,13 @@ class MainActivity : AppCompatActivity() {
         adapter = ScanAdapter(scanResults) {
             Toasty.success(this, it.device.name).show()
             // TODO on scan result item click
+            if (BleManager.isScanning) {
+                viewModel?.stopScan()
+            }
+            viewModel?.connectGatt(this, it.device)
         }
         binding.rvScanResults.adapter = adapter
         setContentView(binding.root)
-
         initViews()
     }
 

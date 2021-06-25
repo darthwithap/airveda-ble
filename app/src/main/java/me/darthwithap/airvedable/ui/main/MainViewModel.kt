@@ -1,7 +1,12 @@
 package me.darthwithap.airvedable.ui.main
 
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCallback
+import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -38,7 +43,7 @@ class MainViewModel : ViewModel() {
 
             // A scan result already exists with the same mac address
             if (index != -1) {
-                // replacing new result with old device
+                // replacing new result with old device to update rssi value
                 scanResultsList[index] = result
             } else {
                 // adding the device to the list of scan results
@@ -49,6 +54,33 @@ class MainViewModel : ViewModel() {
 
         override fun onScanFailed(errorCode: Int) {
             Log.e(TAG, "onScanFailed: $errorCode")
+        }
+    }
+
+    fun connectGatt(context: Context, device: BluetoothDevice) {
+        device.connectGatt(context, false, gattCallback)
+    }
+
+    private val gattCallback = object : BluetoothGattCallback() {
+        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+            val deviceAddress = gatt.device.address
+
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                if (newState == BluetoothProfile.STATE_CONNECTED) {
+                    Log.w("BluetoothGattCallback", "Successfully connected to $deviceAddress")
+                    // TODO: Store a reference to BluetoothGatt
+                } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                    Log.w("BluetoothGattCallback", "Successfully disconnected from $deviceAddress")
+                    gatt.close()
+                }
+            } else {
+                Log.w(
+                    "BluetoothGattCallback",
+                    "Error $status encountered for $deviceAddress! Disconnecting..."
+                )
+                gatt.close()
+            }
+            Log.d(TAG, "onConnectionStateChange: ${gatt.device}")
         }
     }
 }
